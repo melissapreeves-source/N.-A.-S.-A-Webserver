@@ -1,0 +1,79 @@
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json({ limit: '1mb' }));
+
+// In-memory storage (note: this won't persist between function invocations)
+let codeQueue = [];
+let gameReports = {};
+
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <title>IDE Webserver</title>
+  <style>
+    body {
+      background-color: white;
+      color: black;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>hai</h1>
+</body>
+</html>`);
+});
+
+app.post('/send', (req, res) => {
+  const { username, code } = req.body;
+  if (typeof username !== 'string' || typeof code !== 'string') {
+    return res.status(400).send('Invalid or missing username/code');
+  }
+  codeQueue.push({ username, code });
+  res.status(200).send('Code received');
+});
+
+app.get('/fetch/:username', (req, res) => {
+  const user = req.params.username;
+  const index = codeQueue.findIndex(entry => entry.username === user);
+  if (index !== -1) {
+    const entry = codeQueue.splice(index, 1)[0];
+    return res.status(200).json(entry);
+  }
+  res.status(204).send();
+});
+
+app.post('/report', (req, res) => {
+  const { username, gameName } = req.body;
+  if (typeof username !== 'string' || typeof gameName !== 'string') {
+    return res.status(400).send('Invalid or missing username/gameName');
+  }
+  gameReports[username] = gameName;
+  res.status(200).send('Game name received');
+});
+
+app.get('/report/:username', (req, res) => {
+  const gameName = gameReports[req.params.username];
+  if (gameName) {
+    return res.status(200).send(gameName);
+  }
+  res.status(404).send('No game name reported');
+});
+
+app.use((req, res) => {
+  res.status(404).send('Not Found');
+});
+
+// Export for Vercel
+module.exports = app;

@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>IDE Webserver</title>
+  <title>nasa webserver</title>
   <style>
     body {
       background-color: white;
@@ -31,7 +31,7 @@ app.get('/', (req, res) => {
   </style>
 </head>
 <body>
-  <h1>Hello People Of IDE This Is the Webserver</h1>
+  <h1>Not For u hehehe</h1>
 </body>
 </html>`);
 });

@@ -10,6 +10,7 @@ app.use(bodyParser.json({ limit: '1mb' }));
 let codeQueue = [];
 let gameReports = {};
 
+// Main page
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html');
   res.send(`<!DOCTYPE html>
@@ -30,11 +31,12 @@ app.get('/', (req, res) => {
   </style>
 </head>
 <body>
-  <h1>hai</h1>
+  <h1>Hello People Of IDE This Is the Webserver</h1>
 </body>
 </html>`);
 });
 
+// Endpoint to receive code
 app.post('/send', (req, res) => {
   const { username, code } = req.body;
   if (typeof username !== 'string' || typeof code !== 'string') {
@@ -44,6 +46,7 @@ app.post('/send', (req, res) => {
   res.status(200).send('Code received');
 });
 
+// Endpoint to fetch code for a specific user
 app.get('/fetch/:username', (req, res) => {
   const user = req.params.username;
   const index = codeQueue.findIndex(entry => entry.username === user);
@@ -54,6 +57,7 @@ app.get('/fetch/:username', (req, res) => {
   res.status(204).send();
 });
 
+// Endpoint to report game name
 app.post('/report', (req, res) => {
   const { username, gameName } = req.body;
   if (typeof username !== 'string' || typeof gameName !== 'string') {
@@ -63,6 +67,7 @@ app.post('/report', (req, res) => {
   res.status(200).send('Game name received');
 });
 
+// Endpoint to get reported game name
 app.get('/report/:username', (req, res) => {
   const gameName = gameReports[req.params.username];
   if (gameName) {
@@ -71,9 +76,10 @@ app.get('/report/:username', (req, res) => {
   res.status(404).send('No game name reported');
 });
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).send('Not Found');
 });
 
-// Export for Vercel
+// Export for Vercel (NO app.listen() here!)
 module.exports = app;

@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json({ limit: '1mb' }));
+app.use(bodyParser.json({ limit: '99mb' }));
 
 // In-memory storage (note: this won't persist between function invocations)
 let codeQueue = [];

@@ -4,9 +4,9 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json({ limit: '900000000000000000000000000000000000000000000000000000000000000000000000000000mb' }));
+app.use(bodyParser.json({ limit: '90000000000mb' }));
 
-// In-memory storage (note: this won't persist between function invocations)
+// In-memory storage (note: this won't persist between function invocations on Vercel)
 let codeQueue = [];
 let gameReports = {};
 
@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html>
 <head>
-  <title>nasa webserver</title>
+  <title>NASA Webserver</title>
   <style>
     body {
       background-color: white;
@@ -31,30 +31,64 @@ app.get('/', (req, res) => {
   </style>
 </head>
 <body>
-  <h1>Not For u hehe5he</h1>
+  <h1>NASA Webserver Operational</h1>
 </body>
 </html>`);
 });
 
-// Endpoint to receive code
+// Modified /send endpoint to accept and store the 'convert' flag
 app.post('/send', (req, res) => {
-  const { username, code } = req.body;
+  const { username, code, convert } = req.body;
+  
+  // Validate required fields
   if (typeof username !== 'string' || typeof code !== 'string') {
     return res.status(400).send('Invalid or missing username/code');
   }
-  codeQueue.push({ username, code });
-  res.status(200).send('Code received');
+  
+  // Store with convert flag (default to false if not provided)
+  const convertFlag = (convert === true || convert === 'true');
+  
+  codeQueue.push({ 
+    username, 
+    code, 
+    convert: convertFlag 
+  });
+  
+  console.log(`[QUEUE] Stored code for ${username} | Convert: ${convertFlag} | Queue size: ${codeQueue.length}`);
+  res.status(200).send('Code received with convert support');
 });
 
-// Endpoint to fetch code for a specific user
+// Modified /fetch endpoint to return the 'convert' flag
 app.get('/fetch/:username', (req, res) => {
   const user = req.params.username;
   const index = codeQueue.findIndex(entry => entry.username === user);
+  
   if (index !== -1) {
     const entry = codeQueue.splice(index, 1)[0];
-    return res.status(200).json(entry);
+    console.log(`[FETCH] Returning code for ${user} | Convert: ${entry.convert} | Queue size: ${codeQueue.length}`);
+    return res.status(200).json({
+      username: entry.username,
+      code: entry.code,
+      convert: entry.convert
+    });
   }
+  
+  console.log(`[FETCH] No code found for ${user}`);
   res.status(204).send();
+});
+
+// Debug endpoint to check queue status
+app.get('/queue/status', (req, res) => {
+  const queueStatus = codeQueue.map(entry => ({
+    username: entry.username,
+    convert: entry.convert,
+    codeLength: entry.code.length
+  }));
+  res.status(200).json({
+    queueSize: codeQueue.length,
+    queue: queueStatus,
+    reports: gameReports
+  });
 });
 
 // Endpoint to report game name
@@ -64,6 +98,7 @@ app.post('/report', (req, res) => {
     return res.status(400).send('Invalid or missing username/gameName');
   }
   gameReports[username] = gameName;
+  console.log(`[REPORT] ${username} playing: ${gameName}`);
   res.status(200).send('Game name received');
 });
 
@@ -71,8 +106,10 @@ app.post('/report', (req, res) => {
 app.get('/report/:username', (req, res) => {
   const gameName = gameReports[req.params.username];
   if (gameName) {
+    console.log(`[REPORT GET] Found game for ${req.params.username}: ${gameName}`);
     return res.status(200).send(gameName);
   }
+  console.log(`[REPORT GET] No game found for ${req.params.username}`);
   res.status(404).send('No game name reported');
 });
 
